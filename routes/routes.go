@@ -3,6 +3,7 @@ package routes
 import (
 	"cart-order-service/config"
 	"cart-order-service/handlers/cart"
+	"cart-order-service/handlers/order"
 	"cart-order-service/util/middleware"
 	"log"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 type Routes struct {
 	Router *http.ServeMux
 	Cart   *cart.Handler
+	Order  *order.Handler
 }
 
 func URLRewriter(baseURLPath string, next http.Handler) http.HandlerFunc {
@@ -34,15 +36,22 @@ func (r *Routes) SetupBaseURL() {
 
 func (r *Routes) cartRoutes() {
 	r.Router.HandleFunc("GET /cart/{user_id}", middleware.ApplyMiddleware(r.Cart.GetCartByUserID, middleware.EnabledCors, middleware.LoggerMiddleware()))
-	r.Router.HandleFunc("PUT /cart/update/{user_id}", middleware.ApplyMiddleware(r.Cart.AddCart, middleware.EnabledCors, middleware.LoggerMiddleware()))
+	r.Router.HandleFunc("PUT /cart/update/{user_id}", middleware.ApplyMiddleware(r.Cart.UpdateCart, middleware.EnabledCors, middleware.LoggerMiddleware()))
 	r.Router.HandleFunc("POST /cart/add", middleware.ApplyMiddleware(r.Cart.AddCart, middleware.EnabledCors, middleware.LoggerMiddleware()))
 	r.Router.HandleFunc("DELETE /cart/delete/{user_id}", middleware.ApplyMiddleware(r.Cart.DeleteCart, middleware.EnabledCors, middleware.LoggerMiddleware()))
+}
+
+func (r *Routes) orderRoutes() {
+	r.Router.HandleFunc("POST /order/create", middleware.ApplyMiddleware(r.Order.CreateOrder, middleware.EnabledCors, middleware.LoggerMiddleware()))
+	r.Router.HandleFunc("GET /status/{user_id}", middleware.ApplyMiddleware(r.Order.GetOrderStatus, middleware.EnabledCors, middleware.LoggerMiddleware()))
+	r.Router.HandleFunc("PUT /status/update", middleware.ApplyMiddleware(r.Order.Updatestatus, middleware.EnabledCors, middleware.LoggerMiddleware()))
 }
 
 func (r *Routes) SetupRouter() {
 	r.Router = http.NewServeMux()
 	r.SetupBaseURL()
 	r.cartRoutes()
+	r.orderRoutes()
 }
 
 func (r *Routes) Run(port string) {
